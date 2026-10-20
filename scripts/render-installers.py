@@ -4,8 +4,8 @@ from pathlib import Path
 import argparse, hashlib, json
 root=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser();p.add_argument('--packages',type=Path,required=True);args=p.parse_args()
-manifest=json.loads((args.packages/'BUILD.json').read_text());assert manifest['version']=='1.0.1'
-names={'LINUX_SHA':'uscn-gpu-agent-linux-amd64.tar.gz','MAC_SHA':'uscn-gpu-agent-macos-universal.zip','WINDOWS_SHA':'uscn-gpu-agent-windows-amd64.zip'}
+manifest=json.loads((args.packages/'BUILD.json').read_text());assert manifest['version']=='1.0.2'
+names={'LINUX_ARM64_SHA':'uscn-gpu-agent-linux-arm64.tar.gz','LINUX_SHA':'uscn-gpu-agent-linux-amd64.tar.gz','MAC_SHA':'uscn-gpu-agent-macos-universal.zip','WINDOWS_SHA':'uscn-gpu-agent-windows-amd64.zip'}
 packages={v['file']:v for v in manifest['packages']};values={'VERSION':manifest['version']}
 for k,n in names.items():
  path=args.packages/n;digest=hashlib.sha256(path.read_bytes()).hexdigest();assert digest==packages[n]['sha256'];values[k]=digest

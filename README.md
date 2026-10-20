@@ -19,12 +19,12 @@ USCN GPU 服务器设备插件。自动采集硬件信息，为 GPU 资源上架
 curl -fsSL https://uscn.si/install/gpu-agent.sh | bash
 ```
 
-安装程序选择固定版本安装包、校验SHA256，并由你确认系统服务安装权限；按提示粘贴配对码。请在交互终端执行，以便输入配对码。Mac通用包包含Intel与Apple Silicon。
+安装程序选择固定版本安装包、校验SHA256，并由你确认系统服务安装权限；按提示粘贴配对码。请在交互终端执行，以便输入配对码。Linux自动识别x86_64或aarch64/arm64（含DGX Spark）；Mac通用包包含Intel与Apple Silicon。
 
 也可使用GitHub上的同一版本安装入口：
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/beijingcao/uscn-gpu-agent/v1.0.1/install.sh | bash -s -- --github
+curl -fsSL https://raw.githubusercontent.com/beijingcao/uscn-gpu-agent/v1.0.2/install.sh | bash -s -- --github
 ```
 
 仅下载并核对，不安装服务：
@@ -45,6 +45,16 @@ irm https://uscn.si/install/gpu-agent.ps1 | iex
 
 安装完成后，回到GPU上架页选择设备，修正标出的差异，再核对并提交审核。
 
+## NVIDIA DGX Spark / GB10
+
+支持基于Ubuntu的DGX OS（Linux ARM64）。在DGX Spark主机上执行同一条Linux安装命令，自动下载ARM64包；已有安装可重复执行以升级，设备密钥、配对和待传报告保留。
+
+GB10使用CPU/GPU共享的统一内存，`nvidia-smi`可能将显存标为`N/A`或`Not Supported`。插件仍采集GPU UUID、GB10型号和驱动；`unified_memory=true`、`memory_bytes=0`表示没有单独的专用显存容量，**不是没有GPU内存**。共享池总量与当前可用量分别读取`/proc/meminfo`的`MemTotal`与`MemAvailable`，不硬编码128GB，不将Swap计入可承诺内存，也不保证整个共享池可由GPU独占。
+
+CPU颗数/核心数从Linux sysfs拓扑读取，ARM型号优先读取`lscpu`，缺失时保留内核提供的implementer/part标识。无法确认MIG/vGPU/宿主环境时继续阻止物理整机核验；Apple统一内存不因此成为NVIDIA供给。
+
+依据：[NVIDIA内存报告说明](https://docs.nvidia.com/dgx/dgx-spark/known-issues.html)、[DGX Spark系统软件](https://docs.nvidia.com/dgx/dgx-spark-porting-guide/porting/software-requirements.html)。发布验证包含ARM64构建/安装器和受控采集样本；真实DGX Spark安装、传感器与连续上报仍需实机验收。
+
 ## CLI 使用
 
 Linux/macOS安装后：
@@ -64,7 +74,7 @@ Windows安装后：
 已有Go环境也可以仅安装命令行工具：
 
 ```sh
-go install github.com/beijingcao/uscn-gpu-agent/cmd/uscn-gpu-agent@v1.0.1
+go install github.com/beijingcao/uscn-gpu-agent/cmd/uscn-gpu-agent@v1.0.2
 ```
 
 从源码安装CLI不会自动安装开机服务。需要服务常驻时使用上面的平台安装器。
@@ -90,7 +100,7 @@ make build
 make smoke
 ```
 
-在macOS维护机上构建Linux x86_64、Windows x86_64和macOS Universal三个安装包：
+在macOS维护机上构建Linux x86_64/ARM64、Windows x86_64和macOS Universal四个安装包：
 
 ```sh
 python3 scripts/build-release.py --out dist/release

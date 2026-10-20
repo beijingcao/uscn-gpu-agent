@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# USCN GPU Agent 1.0.1. Source: github.com/beijingcao/uscn-gpu-agent
+# USCN GPU Agent 1.0.2. Source: github.com/beijingcao/uscn-gpu-agent
 # Downloaded packages are pinned by SHA256 before any privileged installation.
 set -euo pipefail
 uscn_gpu_main() {
@@ -8,7 +8,7 @@ uscn_gpu_main() {
     case "$1" in
       --github) source=github ;;
       --download-only) download_only=true ;;
-      -h|--help) echo 'USCN GPU Agent 1.0.1: install.sh [--github] [--download-only]'; return 0 ;;
+      -h|--help) echo 'USCN GPU Agent 1.0.2: install.sh [--github] [--download-only]'; return 0 ;;
       *) echo "Unknown option: $1" >&2; return 2 ;;
     esac
     shift
@@ -18,15 +18,19 @@ uscn_gpu_main() {
     Linux:x86_64|Linux:amd64)
       archive=uscn-gpu-agent-linux-amd64.tar.gz
       package=uscn-gpu-agent-linux-amd64
-      expected=9654dcda52f6e053c7d227bd20b9573b7c3cac31db5ff22c059c6a387faf648a ;;
+      expected=327fc62df4273d6507a2a89da42c541288925284b0571849c6815b1d30e9e4cb ;;
+    Linux:aarch64|Linux:arm64)
+      archive=uscn-gpu-agent-linux-arm64.tar.gz
+      package=uscn-gpu-agent-linux-arm64
+      expected=9f0f1288ca0941550ab78039c69833cb3ea46e9266b61b576d693d653b8eb569 ;;
     Darwin:arm64|Darwin:x86_64)
       archive=uscn-gpu-agent-macos-universal.zip
       package=uscn-gpu-agent-macos-universal
-      expected=37fb545c64262a6b6bdc6caa56b02179fd10cb86b53fd54075757b6ec4c624d3 ;;
-    *) echo 'This installer supports Linux x86_64 and macOS Intel/Apple Silicon.' >&2; return 1 ;;
+      expected=fed63545400952a76dde751d4864fef0921b264bc8e14d1b7bb95b3def76c0d3 ;;
+    *) echo 'This installer supports Linux x86_64/ARM64 (DGX Spark) and macOS Intel/Apple Silicon.' >&2; return 1 ;;
   esac
-  local base=https://uscn.si/downloads/gpu-agent/v1.0.1
-  if test "$source" = github; then base=https://github.com/beijingcao/uscn-gpu-agent/releases/download/v1.0.1; fi
+  local base=https://uscn.si/downloads/gpu-agent/v1.0.2
+  if test "$source" = github; then base=https://github.com/beijingcao/uscn-gpu-agent/releases/download/v1.0.2; fi
   command -v curl >/dev/null || { echo 'curl is required.' >&2; return 1; }
   local work
   work=$(mktemp -d "${TMPDIR:-/tmp}/uscn-gpu-install.XXXXXXXX")
@@ -49,7 +53,7 @@ uscn_gpu_main() {
   fi
   test -f "$work/$package/install.sh" && test -f "$work/$package/SHA256SUMS" || { echo 'Invalid package layout.' >&2; return 1; }
   if test "$download_only" = true; then
-    echo "Verified USCN GPU Agent 1.0.1: $work/$package"
+    echo "Verified USCN GPU Agent 1.0.2: $work/$package"
     trap - EXIT
     return 0
   fi

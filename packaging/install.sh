@@ -29,7 +29,10 @@ if test "$(uname -s)" = Darwin; then
     /usr/bin/dscl . -create "/Users/$account" IsHidden 1
   fi
   state=/var/db/uscn-gpu-agent
-  /bin/mkdir -p "$state" /usr/local/libexec/uscn-gpu-agent
+  /bin/mkdir -p "$state"
+  # The service runs as _uscn_gpu. umask 077 protects state, but must not
+  # prevent that account from traversing the root-owned program directories.
+  /usr/bin/install -d -m 755 /usr/local/libexec /usr/local/libexec/uscn-gpu-agent /usr/local/bin
   /usr/sbin/chown "$account":staff "$state"
   /bin/chmod 700 "$state"
   /usr/bin/install -m 755 "$binary" /usr/local/libexec/uscn-gpu-agent/uscn-gpu-agent

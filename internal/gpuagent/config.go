@@ -14,7 +14,7 @@ import (
 	"strings"
 )
 
-const Version = "1.0.1"
+const Version = "1.0.2"
 
 type Config struct {
 	Platform       string `json:"platform"`

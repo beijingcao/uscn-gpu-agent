@@ -63,6 +63,20 @@ func collectPlatform(ctx context.Context, s *Snapshot) {
 	}
 	s.CPUSockets = int64(len(sockets))
 	s.CPUCores = int64(len(cores))
+	if s.CPUModel == "" || s.CPUSockets == 0 || s.CPUCores == 0 {
+		raw, _ := command(ctx, "env", "LC_ALL=C", "lscpu", "--json")
+		model, sockets, cores := linuxCPU(cpu, raw, read)
+		if s.CPUModel == "" {
+			s.CPUModel = model
+		}
+		if s.CPUSockets == 0 {
+			s.CPUSockets = sockets
+		}
+		if s.CPUCores == 0 {
+			s.CPUCores = cores
+		}
+	}
+
 	for _, line := range strings.Split(read("/proc/meminfo"), "\n") {
 		fields := strings.Fields(line)
 		if len(fields) < 2 {

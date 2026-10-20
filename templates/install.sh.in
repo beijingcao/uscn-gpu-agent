@@ -19,11 +19,15 @@ uscn_gpu_main() {
       archive=uscn-gpu-agent-linux-amd64.tar.gz
       package=uscn-gpu-agent-linux-amd64
       expected=@LINUX_SHA@ ;;
+    Linux:aarch64|Linux:arm64)
+      archive=uscn-gpu-agent-linux-arm64.tar.gz
+      package=uscn-gpu-agent-linux-arm64
+      expected=@LINUX_ARM64_SHA@ ;;
     Darwin:arm64|Darwin:x86_64)
       archive=uscn-gpu-agent-macos-universal.zip
       package=uscn-gpu-agent-macos-universal
       expected=@MAC_SHA@ ;;
-    *) echo 'This installer supports Linux x86_64 and macOS Intel/Apple Silicon.' >&2; return 1 ;;
+    *) echo 'This installer supports Linux x86_64/ARM64 (DGX Spark) and macOS Intel/Apple Silicon.' >&2; return 1 ;;
   esac
   local base=https://uscn.si/downloads/gpu-agent/v@VERSION@
   if test "$source" = github; then base=https://github.com/beijingcao/uscn-gpu-agent/releases/download/v@VERSION@; fi

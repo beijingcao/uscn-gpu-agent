@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build fixed v1.0.1 release packages from this standalone source. Requires macOS for Universal signing."""
+"""Build fixed v1.0.2 release packages from this standalone source. Requires macOS for Universal signing."""
 from pathlib import Path
 import argparse, hashlib, json, os, shutil, subprocess, tarfile, zipfile
 
@@ -20,6 +20,7 @@ def build(target,goos,arch):
 build(out/'mac-arm64','darwin','arm64')
 build(out/'mac-amd64','darwin','amd64')
 build(out/'linux-amd64','linux','amd64')
+build(out/'linux-arm64','linux','arm64')
 build(out/'windows-amd64.exe','windows','amd64')
 subprocess.run(['/usr/bin/lipo','-create',str(out/'mac-arm64'),str(out/'mac-amd64'),'-output',str(out/'mac-universal')],check=True)
 subprocess.run(['/usr/bin/codesign','--force','--sign','-',str(out/'mac-universal')],check=True,stdout=subprocess.DEVNULL)
@@ -29,6 +30,7 @@ if set(archs)!={'x86_64','arm64'}:raise RuntimeError('universal architecture mis
 packages=[]
 for label,binary,files,archive in [
  ('linux-amd64','linux-amd64',['install.sh','README.txt'],'uscn-gpu-agent-linux-amd64.tar.gz'),
+ ('linux-arm64','linux-arm64',['install.sh','README.txt'],'uscn-gpu-agent-linux-arm64.tar.gz'),
  ('windows-amd64','windows-amd64.exe',['install.ps1','README.txt'],'uscn-gpu-agent-windows-amd64.zip'),
  ('macos-universal','mac-universal',['install.sh','install.command','README.txt'],'uscn-gpu-agent-macos-universal.zip')]:
     package=out/('uscn-gpu-agent-'+label);package.mkdir()
@@ -47,5 +49,5 @@ for label,binary,files,archive in [
         with tarfile.open(path,'w:gz') as t:t.add(package,arcname=package.name)
     (out/(archive+'.sha256')).write_text(digest(path)+'  '+archive+'\n')
     packages.append({'file':archive,'sha256':digest(path),'bytes':path.stat().st_size})
-(out/'BUILD.json').write_text(json.dumps({'version':'1.0.1','packages':packages,'mac_architectures':archs,'mac_signature':'ad-hoc','apple_notarization':False,'windows_code_signing':False,'real_nvidia_test':'PENDING_AUTHORIZED_HARDWARE','windows_runtime_test':'PENDING_AUTHORIZED_HOST'},indent=2)+'\n')
-print(json.dumps({'built':len(packages),'version':'1.0.1','mac_architectures':archs}))
+(out/'BUILD.json').write_text(json.dumps({'version':'1.0.2','packages':packages,'mac_architectures':archs,'mac_signature':'ad-hoc','apple_notarization':False,'windows_code_signing':False,'real_nvidia_test':'PENDING_AUTHORIZED_HARDWARE','windows_runtime_test':'PENDING_AUTHORIZED_HOST'},indent=2)+'\n')
+print(json.dumps({'built':len(packages),'version':'1.0.2','mac_architectures':archs}))

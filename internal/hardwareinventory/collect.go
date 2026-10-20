@@ -50,6 +50,19 @@ func pointer(s string) *int64 {
 	}
 	return &v
 }
+
+// IsGB10 matches the driver's exact GB10 model, never an arbitrary N/A device.
+func IsGB10(model string) bool {
+	return strings.EqualFold(strings.TrimSpace(model), "NVIDIA GB10") || strings.EqualFold(strings.TrimSpace(model), "GB10")
+}
+func unsupported(value string) bool {
+	switch strings.ToLower(strings.Trim(strings.TrimSpace(value), "[]")) {
+	case "n/a", "not supported":
+		return true
+	default:
+		return false
+	}
+}
 func ParseNVIDIA(b []byte) ([]GPU, error) {
 	r := csv.NewReader(bytes.NewReader(b))
 	r.TrimLeadingSpace = true
@@ -66,11 +79,16 @@ func ParseNVIDIA(b []byte) ([]GPU, error) {
 		}
 		id := strings.TrimSpace(row[0])
 		mem := number(row[2])
-		if !strings.HasPrefix(id, "GPU-") || seen[id] || mem <= 0 || mem > 1048576 {
+		unified := IsGB10(strings.TrimSpace(row[1])) && unsupported(row[2])
+		if !strings.HasPrefix(id, "GPU-") || seen[id] || (!unified && mem <= 0) || mem > 1048576 {
 			return nil, errors.New("invalid NVIDIA identity")
 		}
 		seen[id] = true
-		g := GPU{ID: id, Vendor: "NVIDIA", Model: strings.TrimSpace(row[1]), MemoryBytes: mem << 20, Driver: strings.TrimSpace(row[3]), PartitionState: "UNKNOWN"}
+		g := GPU{ID: id, Vendor: "NVIDIA", Model: strings.TrimSpace(row[1]), MemoryBytes: mem << 20, UnifiedMemory: unified, Driver: strings.TrimSpace(row[3]), PartitionState: "UNKNOWN"}
+		if IsGB10(g.Model) {
+			g.UnifiedMemory = true
+			g.MemoryBytes = 0
+		}
 		if len(row) >= 8 {
 			g.Utilization = pointer(row[4])
 			g.MemoryUsed = pointer(row[5])
@@ -87,7 +105,7 @@ func ParseNVIDIA(b []byte) ([]GPU, error) {
 			g.Virtual = strings.Contains(strings.ToLower(row[8]), "vgpu") || strings.EqualFold(strings.TrimSpace(row[9]), "Enabled")
 			if g.Virtual {
 				g.PartitionState = "PARTITIONED"
-			} else if strings.EqualFold(strings.TrimSpace(row[8]), "None") && (strings.EqualFold(strings.TrimSpace(row[9]), "Disabled") || strings.Contains(row[9], "N/A")) {
+			} else if strings.EqualFold(strings.TrimSpace(row[8]), "None") && (strings.EqualFold(strings.TrimSpace(row[9]), "Disabled") || unsupported(row[9])) {
 				g.PartitionState = "PHYSICAL"
 			}
 		}
@@ -130,7 +148,7 @@ func nvidia(ctx context.Context) ([]GPU, error) {
 					if strings.EqualFold(strings.TrimSpace(g.MIG), "Enabled") || strings.Contains(strings.ToLower(g.Virtualization), "vgpu") {
 						gs[i].Virtual = true
 						gs[i].PartitionState = "PARTITIONED"
-					} else if strings.EqualFold(strings.TrimSpace(g.Virtualization), "None") && (strings.EqualFold(strings.TrimSpace(g.MIG), "Disabled") || strings.TrimSpace(g.MIG) == "N/A") {
+					} else if strings.EqualFold(strings.TrimSpace(g.Virtualization), "None") && (strings.EqualFold(strings.TrimSpace(g.MIG), "Disabled") || unsupported(g.MIG)) {
 						gs[i].PartitionState = "PHYSICAL"
 					}
 				}
