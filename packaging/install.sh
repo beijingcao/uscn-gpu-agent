@@ -3,7 +3,61 @@
 set -euo pipefail
 umask 077
 package_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-test "$(id -u)" = 0 || { echo '请使用 sudo bash install.sh 安装系统后台服务。' >&2; exit 1; }
+action="${1:-}"
+if test "$#" -gt 1; then echo 'Usage: install.sh [--install|--uninstall]' >&2; exit 2; fi
+if test -z "$action"; then
+  printf 'USCN GPU Agent\n  1) 安装 / 升级\n  2) 卸载（保留设备身份与待传报告）\n  0) 退出\n请选择 [0/1/2，默认0]：'
+  IFS= read -r choice </dev/tty
+  case "$choice" in 1) action=--install ;; 2) action=--uninstall ;; 0|'') exit 0 ;; *) echo '无效选项，未执行任何操作。' >&2; exit 2 ;; esac
+fi
+case "$action" in --install|--uninstall) ;; *) echo 'Usage: install.sh [--install|--uninstall]' >&2; exit 2 ;; esac
+test "$(id -u)" = 0 || { echo '请使用 sudo bash install.sh 管理系统后台服务。' >&2; exit 1; }
+if test "$action" = --uninstall; then
+  binary=/usr/local/libexec/uscn-gpu-agent/uscn-gpu-agent
+  cli=/usr/local/bin/uscn-gpu-agent
+  # Refuse symlinked product directories/files; never recursively delete state,
+  # service accounts, shared parent directories, or files outside this product.
+  for path in /usr/local/libexec/uscn-gpu-agent "$binary"; do
+    test ! -L "$path" || { echo "拒绝卸载：路径为符号链接 $path" >&2; exit 1; }
+  done
+  if test "$(uname -s)" = Darwin; then
+    unit=/Library/LaunchDaemons/si.uscn.gpu-agent.plist
+    if test -e "$unit" || test -L "$unit"; then
+      test -f "$unit" && test ! -L "$unit" || { echo '插件服务文件异常，停止卸载。' >&2; exit 1; }
+      test "$(/usr/libexec/PlistBuddy -c 'Print :Label' "$unit")" = si.uscn.gpu-agent &&
+      test "$(/usr/libexec/PlistBuddy -c 'Print :UserName' "$unit")" = _uscn_gpu &&
+      test "$(/usr/libexec/PlistBuddy -c 'Print :ProgramArguments:0' "$unit")" = "$binary" || { echo '服务文件与USCN GPU插件不一致，停止卸载。' >&2; exit 1; }
+    fi
+    if /bin/launchctl print system/si.uscn.gpu-agent >/dev/null 2>&1; then
+      /bin/launchctl bootout system/si.uscn.gpu-agent
+    fi
+    /bin/rm -f -- "$unit"
+  elif test "$(uname -s)" = Linux; then
+    unit=/etc/systemd/system/uscn-gpu-agent.service
+    if test -e "$unit" || test -L "$unit"; then
+      test -f "$unit" && test ! -L "$unit" || { echo '插件服务文件异常，停止卸载。' >&2; exit 1; }
+      grep -Fqx 'ExecStart=/usr/local/libexec/uscn-gpu-agent/uscn-gpu-agent service --config /var/lib/uscn-gpu-agent/device.json' "$unit" &&
+      grep -Fqx 'User=uscn-gpu' "$unit" || { echo '服务文件与USCN GPU插件不一致，停止卸载。' >&2; exit 1; }
+      systemctl stop uscn-gpu-agent.service
+      systemctl disable uscn-gpu-agent.service
+      /bin/rm -f -- "$unit"
+      systemctl daemon-reload
+    elif systemctl is-active --quiet uscn-gpu-agent.service; then
+      systemctl stop uscn-gpu-agent.service
+    fi
+  else
+    echo '本安装程序仅支持Linux与macOS。' >&2; exit 1
+  fi
+  if test -L "$cli"; then
+    if test "$(readlink "$cli")" = "$binary"; then /bin/rm -f -- "$cli"; else echo '已有其他CLI链接，已保留。'; fi
+  elif test -e "$cli"; then echo '已有其他CLI文件，已保留。'; fi
+  test ! -e "$binary" || test -f "$binary" || { echo '插件程序路径异常，停止卸载。' >&2; exit 1; }
+  /bin/rm -f -- "$binary"
+  /bin/rmdir /usr/local/libexec/uscn-gpu-agent 2>/dev/null || true
+  echo 'USCN GPU插件已卸载或未安装。设备身份、待传报告及专用账户已保留，可重新安装恢复。'
+  echo '设备将停止上报；平台资源、审核记录和订单义务不因本机卸载而解除。'
+  exit 0
+fi
 platform="${USCN_GPU_PLATFORM:-https://uscn.si}"
 cli=/usr/local/bin/uscn-gpu-agent
 if test -e "$cli" || test -L "$cli"; then

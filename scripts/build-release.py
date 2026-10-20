@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build fixed v1.0.2 release packages from this standalone source. Requires macOS for Universal signing."""
+"""Build fixed v1.0.3 release packages from this standalone source. Requires macOS for Universal signing."""
 from pathlib import Path
 import argparse, hashlib, json, os, shutil, subprocess, tarfile, zipfile
 
@@ -49,5 +49,5 @@ for label,binary,files,archive in [
         with tarfile.open(path,'w:gz') as t:t.add(package,arcname=package.name)
     (out/(archive+'.sha256')).write_text(digest(path)+'  '+archive+'\n')
     packages.append({'file':archive,'sha256':digest(path),'bytes':path.stat().st_size})
-(out/'BUILD.json').write_text(json.dumps({'version':'1.0.2','packages':packages,'mac_architectures':archs,'mac_signature':'ad-hoc','apple_notarization':False,'windows_code_signing':False,'real_nvidia_test':'PENDING_AUTHORIZED_HARDWARE','windows_runtime_test':'PENDING_AUTHORIZED_HOST'},indent=2)+'\n')
-print(json.dumps({'built':len(packages),'version':'1.0.2','mac_architectures':archs}))
+(out/'BUILD.json').write_text(json.dumps({'version':'1.0.3','packages':packages,'mac_architectures':archs,'mac_signature':'ad-hoc','apple_notarization':False,'windows_code_signing':False,'real_nvidia_test':'PENDING_AUTHORIZED_HARDWARE','windows_runtime_test':'PENDING_AUTHORIZED_HOST'},indent=2)+'\n')
+print(json.dumps({'built':len(packages),'version':'1.0.3','mac_architectures':archs}))

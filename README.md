@@ -19,12 +19,12 @@ USCN GPU 服务器设备插件。自动采集硬件信息，为 GPU 资源上架
 curl -fsSL https://uscn.si/install/gpu-agent.sh | bash
 ```
 
-安装程序选择固定版本安装包、校验SHA256，并由你确认系统服务安装权限；按提示粘贴配对码。请在交互终端执行，以便输入配对码。Linux自动识别x86_64或aarch64/arm64（含DGX Spark）；Mac通用包包含Intel与Apple Silicon。
+命令先显示菜单：`1) 安装 / 升级`、`2) 卸载`、`0) 退出`；空输入默认退出。安装程序选择固定版本安装包、校验SHA256，并由你确认系统服务权限；安装时按提示粘贴配对码。请在交互终端执行，以便输入配对码。Linux自动识别x86_64或aarch64/arm64（含DGX Spark）；Mac通用包包含Intel与Apple Silicon。
 
 也可使用GitHub上的同一版本安装入口：
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/beijingcao/uscn-gpu-agent/v1.0.2/install.sh | bash -s -- --github
+curl -fsSL https://raw.githubusercontent.com/beijingcao/uscn-gpu-agent/v1.0.3/install.sh | bash -s -- --github
 ```
 
 仅下载并核对，不安装服务：
@@ -41,9 +41,30 @@ curl -fsSL https://uscn.si/install/gpu-agent.sh | bash -s -- --download-only
 irm https://uscn.si/install/gpu-agent.ps1 | iex
 ```
 
-按提示输入设备配对码。安装原生Windows Service，保留原设备身份和已有待传报告。
+先选择安装/升级或卸载；安装时按提示输入设备配对码。安装原生Windows Service，保留原设备身份和已有待传报告。
 
 安装完成后，回到GPU上架页选择设备，修正标出的差异，再核对并提交审核。
+
+## 卸载与重新安装
+
+同一条安装命令也可以卸载：在菜单选择`2`。Linux/macOS也可直接指定操作：
+
+```sh
+# 安装或升级
+curl -fsSL https://uscn.si/install/gpu-agent.sh | bash -s -- --install
+# 卸载
+curl -fsSL https://uscn.si/install/gpu-agent.sh | bash -s -- --uninstall
+```
+
+Windows管理员PowerShell也可显式指定：
+
+```powershell
+& ([scriptblock]::Create((irm https://uscn.si/install/gpu-agent.ps1))) -Action Uninstall
+```
+
+卸载会停止后台上报、移除本插件的系统服务、程序及其CLI链接。**保留设备配对、密钥、待传报告和专用账户**，以后选择安装可恢复；不会删除平台审核/报告历史、撤销资源或解除订单义务。正在履约的设备请先按平台正常流程处理订单与资源退出。目录含其他文件或CLI属于其他程序时予以保留；服务定义不匹配、路径为符号链接或服务停止失败时停止卸载并报错。
+
+离线安装包中运行`sudo bash install.sh`或管理员PowerShell运行`install.ps1`也显示菜单；显式`--install`/`--uninstall`（Windows `-Action Install`/`Uninstall`）跳过菜单。`--download-only`仅下载并校验，不显示操作菜单、不安装或卸载。
 
 ## NVIDIA DGX Spark / GB10
 
@@ -74,7 +95,7 @@ Windows安装后：
 已有Go环境也可以仅安装命令行工具：
 
 ```sh
-go install github.com/beijingcao/uscn-gpu-agent/cmd/uscn-gpu-agent@v1.0.2
+go install github.com/beijingcao/uscn-gpu-agent/cmd/uscn-gpu-agent@v1.0.3
 ```
 
 从源码安装CLI不会自动安装开机服务。需要服务常驻时使用上面的平台安装器。
