@@ -6,7 +6,7 @@ package_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 action="${1:-}"
 if test "$#" -gt 1; then echo 'Usage: install.sh [--install|--uninstall]' >&2; exit 2; fi
 if test -z "$action"; then
-  printf 'USCN GPU Agent\n  1) 安装 / 升级\n  2) 卸载（保留设备身份与待传报告）\n  0) 退出\n请选择 [0/1/2，默认0]：'
+  printf 'USCN GPU Agent\n  1) 安装 / 升级\n  2) 卸载\n  0) 退出\n请选择 [0/1/2，默认0]：'
   IFS= read -r choice </dev/tty
   case "$choice" in 1) action=--install ;; 2) action=--uninstall ;; 0|'') exit 0 ;; *) echo '无效选项，未执行任何操作。' >&2; exit 2 ;; esac
 fi

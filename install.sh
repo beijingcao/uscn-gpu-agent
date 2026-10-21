@@ -22,7 +22,7 @@ uscn_gpu_main() {
   if test "$download_only" = false && test -z "$action"; then
     echo 'USCN GPU Agent 1.0.3' >&2
     echo '  1) 安装 / 升级' >&2
-    echo '  2) 卸载（保留设备身份与待传报告）' >&2
+    echo '  2) 卸载' >&2
     echo '  0) 退出' >&2
     if ! ( : </dev/tty ) 2>/dev/null; then
       echo '请在交互终端选择操作，或显式使用 --install / --uninstall / --download-only。' >&2; return 1

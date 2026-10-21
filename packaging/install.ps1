@@ -3,7 +3,7 @@
 $ErrorActionPreference = 'Stop'
 if (-not $Action) {
     Write-Host '  1) 安装 / 升级'
-    Write-Host '  2) 卸载（保留设备身份与待传报告）'
+    Write-Host '  2) 卸载'
     Write-Host '  0) 退出'
     $choice = Read-Host '请选择 [0/1/2，默认0]'
     switch ($choice) {
